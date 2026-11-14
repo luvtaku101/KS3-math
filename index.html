@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KS3 Maths Revision Generator</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f7f5f0;--card:#fff;--tx:#1f2a37;--mu:#6b7280;--ac:#0f766e;--ac2:#ccfbf1;--bd:#e5e7eb;--key:#fff7ed}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111827;--card:#1f2937;--tx:#f3f4f6;--mu:#9ca3af;--ac:#2dd4bf;--ac2:#134e4a;--bd:#374151;--key:#3a2a1a}}
+:root[data-theme="dark"]{--bg:#111827;--card:#1f2937;--tx:#f3f4f6;--mu:#9ca3af;--ac:#2dd4bf;--ac2:#134e4a;--bd:#374151;--key:#3a2a1a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.w{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:.2em 0}h2{font-size:1.1rem;margin:1em 0 .4em}
+.mu{color:var(--mu);font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:12px 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:999px;padding:7px 13px;font-size:.9rem;cursor:pointer}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.chip.x{border-style:dashed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+input[type=text]{flex:1;min-width:180px;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font-size:1rem}
+button.b{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-size:1rem;cursor:pointer}
+button.b.g{background:var(--card);color:var(--tx);border:1px solid var(--bd)}
+.hd{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:2px solid var(--tx);padding-bottom:6px;margin-bottom:6px}
+.sec{background:var(--ac2);padding:6px 10px;border-radius:8px;font-weight:600;margin:14px 0 6px}
+ol.qs{margin:0;padding:0;list-style:none}
+.q{display:flex;gap:10px;padding:10px 0;border-bottom:1px dashed var(--bd);min-height:64px}
+.q b{min-width:2em}.tag{font-size:.72rem;color:var(--mu)}
+#key{background:var(--key);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-top:14px;display:none}
+#key.show{display:block}
+.k{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--bd)}
+sup,sub{font-size:.7em;line-height:0}
+#msg{color:#b45309;font-size:.9rem;margin-top:6px}
+body.pq #key,body.pq .ui{display:none}
+body.pk #paper,body.pk .ui{display:none}body.pk #key{display:block}
+@media print{:root{--bg:#fff;--card:#fff;--tx:#000;--mu:#555;--bd:#bbb;--ac2:#eee;--key:#fff}.ui{display:none}body{font-size:13px}.q{min-height:90px;break-inside:avoid}#key.show{break-before:page}}
+.pdfroot{position:absolute;left:-10000px;top:0;width:794px;padding:40px;background:#fff;color:#000;font:15px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;--tx:#000;--mu:#555;--bd:#bbb;--ac2:#e5e7eb;--card:#fff;--key:#fff}
+.pdfroot .pc{display:block!important;border:0!important;padding:0!important;margin:0!important;background:#fff!important}
+.pdfroot .q{min-height:92px}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script></head><body><div class="w">
+<div class="ui">
+<h1>📐 KS3 Maths Revision Generator</h1>
+<div class="mu">Medium level · 30 questions: 15 non-calculator + 15 calculator · answer key included</div>
+<div class="card"><h2 style="margin-top:0">1. Pick topics</h2>
+<div class="chips" id="chips"></div>
+<div class="row"><button class="b g" onclick="selAll(1)">Half-term list</button><button class="b g" onclick="selAll(2)">Select all</button><button class="b g" onclick="selAll(0)">Clear</button></div>
+<div class="row"><input type="text" id="typed" placeholder="Type a topic, e.g. bearings, ratio, pythagoras" onkeydown="if(event.key==='Enter')addT()"><button class="b g" onclick="addT()">Add</button></div>
+<div id="msg"></div></div>
+<div class="row"><button class="b" onclick="make()">Generate 30 questions</button><button class="b g" onclick="make(1)">Same topics, new paper</button></div>
+</div>
+<div id="out"></div>
+</div>
+<script>
+let seed=1;const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const R=(a,b)=>a+Math.floor(rnd()*(b-a+1)),P=a=>a[R(0,a.length-1)];
+const N=v=>{v=+(+v).toFixed(8);return(v<0?'−':'')+Math.abs(v).toLocaleString('en-GB',{maximumFractionDigits:8})};
+const p=v=>v<0?`(${N(v)})`:N(v),sup=(b,e)=>`${b}<sup>${e}</sup>`,frac=(n,d)=>`<sup>${n}</sup>⁄<sub>${d}</sub>`;
+const gcd=(a,b)=>b?gcd(b,a%b):a,lcm=(a,b)=>a/gcd(a,b)*b,pd=b=>String(b).padStart(3,'0'),sg=n=>n<0?`− ${-n}`:`+ ${n}`;
+const gbp=v=>'£'+(+v).toFixed(2).replace(/\B(?=(\d{3})+\.)/g,',');
+const sfs=(v,k)=>{let t=(+v).toPrecision(k);if(/e/.test(t))t=String(Math.round(+t));if(!/\./.test(t))t=t.replace(/\B(?=(\d{3})+$)/g,',');return t.replace('-','−')};
+const stm=(m,e)=>`${N(m)} × 10<sup>${e<0?'−'+(-e):e}</sup>`;
+const stf=v=>{let[m,e]=(+(+v).toPrecision(10)).toExponential().split('e');return stm(+m,+e)};
+const pf=n=>{let o=[],d=2;while(n>1){let c=0;while(n%d==0){n/=d;c++}if(c)o.push(c>1?sup(d,c):d);d++}return o.join(' × ')};
+const r1=v=>+(+v).toPrecision(1),PN=['','','','','','pentagon','hexagon','heptagon','octagon','nonagon','decagon','11-sided polygon','dodecagon'];
+const mk=(name,kw,n,c,x)=>({name,kw,n,c:c||n,x});
+const LOCI=[()=>{let r=R(2,6);return[`Draw the locus of points exactly ${r} cm from a fixed point P.`,`A circle, centre P, radius ${r} cm.`]},
+()=>{let d=R(5,9);return[`A and B are ${d} cm apart. Construct the locus of points equidistant from A and B.`,`The perpendicular bisector of AB: a straight line at 90° through the midpoint (${N(d/2)} cm from A), made with equal compass arcs from A and B.`]},
+()=>{let a=P([50,60,70,80,100,120]);return[`Two lines meet at X with an angle of ${a}° between them. Construct the locus of points equidistant from both lines.`,`The angle bisector: a straight line from X making ${a/2}° with each line.`]},
+()=>{let l=R(4,8),r=R(1,3);return[`AB is ${l} cm long. Draw the locus of points exactly ${r} cm from AB.`,`A “racetrack” shape: two straight lines ${l} cm long, ${r} cm either side of AB, joined by semicircles of radius ${r} cm at A and B (${l+2*r} cm long, ${2*r} cm wide).`]},
+()=>{let r=R(2,5),d=R(6,9);return[`A and B are ${d} cm apart and a tree T is somewhere near them. Shade the region that is less than ${r} cm from T and closer to A than to B.`,`Shade inside the circle (centre T, radius ${r} cm) but only the part on A’s side of the perpendicular bisector of AB.`]},
+()=>{let r=R(3,8);return[`A dog is tied to a post P by a ${r} m lead on open flat ground. Shade the region it can reach.`,`The inside of a circle, centre P, radius ${r} m.`]}];
+const TOP=[
+mk('Four operations incl. negatives','negative,integer,add,subtract,multipl,divid,+',[
+()=>{let a=R(-12,12),b=R(-12,-1);return[`Work out ${N(a)} − ${p(b)}`,N(a-b)]},
+()=>{let a=R(-12,-2),b=R(2,12)*P([1,-1]);return[`Work out ${p(a)} × ${p(b)}`,N(a*b)]},
+()=>{let b=P([-9,-8,-7,-6,-4,-3,3,4,6,7,8,9]),c=R(-12,12);return[`Work out ${N(b*c)} ÷ ${p(b)}`,N(c)]},
+()=>{let a=R(-9,9),b=R(-9,9),c=R(-9,9);return[`Work out ${N(a)} + ${p(b)} − ${p(c)}`,N(a+b-c)]}],[
+()=>{let a=P([-1,1])*R(11,90)/10,b=P([-1,1])*R(11,90)/10;return[`Work out ${p(a)} × ${p(b)}`,N(a*b)]},
+()=>{let k=P([-1,1])*R(11,60)/10,y=P([-1,1])*R(3,19)/2;return[`Work out ${N(k*y)} ÷ ${p(y)}`,N(k)]},
+()=>{let t=-R(30,95)/10,r=R(80,200)/10,d=R(30,95)/10;return[`At 6 am the temperature was ${N(t)}°C. It rose by ${N(r)}°C by noon, then fell by ${N(d)}°C by midnight. What was the temperature at midnight?`,N(t+r-d)+'°C']}]),
+mk('BIDMAS','bidmas,bodmas,order of operations',[
+()=>{let a=R(2,9),b=R(2,9),c=R(2,9);return[`Work out ${a} + ${b} × ${c}`,a+b*c]},
+()=>{let a=R(2,9),b=R(2,9),c=R(2,12);return[`Work out (${a} + ${b})² − ${c}`,(a+b)**2-c]},
+()=>{let d=R(2,6),k=R(2,9),a=R(3,9),b=R(2,9);return[`Work out ${a} × ${b} − ${d*k} ÷ ${d}`,a*b-k]},
+()=>{let a=R(2,5),b=R(2,6),c=R(2,5);return[`Work out ${a} + ${sup(b,2)} × ${c}`,a+b*b*c]},
+()=>{let s=R(2,6),t=R(2,6),k=R(2,5),e=R(2,9);return[`Work out ${k*(s+t)} ÷ (${s} + ${t}) + ${e}²`,k+e*e]}],[
+()=>{let a=R(11,59)/10,b=R(11,59)/10,c=R(11,59)/10;return[`Work out (${N(a)} + ${N(b)}) × ${N(c)}`,N((a+b)*c)]},
+()=>{let a=R(21,59)/10,r=R(5,13);return[`Work out ${N(a)}² − √${r*r}`,N(a*a-r)]},
+()=>{let a=R(12,95)/10,b=R(12,95)/10,c=R(12,95)/10;return[`Work out ${N(a)} + ${N(b)} ÷ ${N(c)}. Give your answer to 2 d.p.`,(a+b/c).toFixed(2)]}]),
+mk('Using a calculator','calculator,estimate,estimation',[
+()=>{let x=R(31,98)/10,y=R(11,99)/10;return[`Estimate ${N(x)} × ${N(y)} by rounding each number to 1 significant figure.`,N(r1(x)*r1(y))]},
+()=>{let a=R(201,899),b=R(21,99);return[`Estimate ${a} ÷ ${b} by rounding each number to 1 significant figure.`,N(r1(a)/r1(b))]}],[
+()=>{let a=R(21,99)/10,b=R(21,99)/10,c=R(21,99)/10;return[`Use a calculator: ${N(a)} × ${N(b)} + ${N(c)}². Give your answer to 3 s.f.`,sfs(a*b+c*c,3)]},
+()=>{let x=R(21,99)/10;return[`Use a calculator to find ${N(x)}³ to 2 d.p.`,(x**3).toFixed(2)]},
+()=>{let n=R(200,900);return[`Use a calculator to find √${n} to 3 s.f.`,sfs(Math.sqrt(n),3)]},
+()=>{let a=R(100,999)/10,b=R(100,999)/10,c=R(21,99)/10;return[`Work out (${N(a)} + ${N(b)}) ÷ ${N(c)} to 3 s.f.`,sfs((a+b)/c,3)]}]),
+mk('Significant figures','significant,sig fig,s.f.',[
+()=>{let v=R(10001,99999),k=R(1,3);return[`Write ${N(v)} to ${k} significant figure${k>1?'s':''}.`,sfs(v,k)]},
+()=>{let v=R(1001,9999)/100000;return[`Write ${v} to 2 significant figures.`,sfs(v,2)]},
+()=>{let[t,a]=P([['0.0305',3],['0.00470',3],['2.060',4],['0.8',1],['30.07',4],['0.01002',4],['500.1',4],['0.0090',2]]);return[`How many significant figures are in ${t}?`,a]}],[
+()=>{let a=R(41,99)/10,b=R(101,989)/10;return[`Work out ${N(a)} × ${N(b)}. Give your answer to 3 s.f.`,sfs(a*b,3)]},
+()=>{let a=R(100,900),b=R(7,19);return[`Work out ${a} ÷ ${b}. Give your answer to 3 s.f.`,sfs(a/b,3)]},
+()=>{let r=R(31,99)/10;return[`A circle has radius ${N(r)} cm. Work out its area to 3 s.f.`,sfs(Math.PI*r*r,3)+' cm²']}]),
+mk('Rounding','round,decimal place,d.p.',[
+()=>{let v=R(11000,99999),u=P([10,100,1000]);return[`Round ${N(v)} to the nearest ${N(u)}.`,N(Math.round(v/u)*u)]},
+()=>{let iv=R(10001,99999),k=P([1,2]);return[`Round ${(iv/1000).toFixed(3)} to ${k} decimal place${k>1?'s':''}.`,(Math.round(iv/10**(3-k))/10**k).toFixed(k)]},
+()=>{let v=R(1001,19999);return[`A journey is ${N(v)} metres. Write this in km to 1 d.p.`,(Math.round(v/100)/10).toFixed(1)+' km']}],[
+()=>{let a=R(100,999),b=P([7,9,11,12,13,14,15,17,19]);return[`Work out ${a} ÷ ${b}. Give your answer to 2 d.p.`,(a/b).toFixed(2)]},
+()=>{let n=R(50,500);return[`Work out √${n}. Give your answer to 1 d.p.`,Math.sqrt(n).toFixed(1)]}]),
+mk('Standard form','standard form,scientific',[
+()=>{let m=R(11,99)/10,e=R(3,7);return[`Write ${N(m*10**e)} in standard form.`,stm(m,e)]},
+()=>{let m=R(11,99)/10,e=R(3,6);return[`Write ${stm(m,-e)} as an ordinary number.`,N(m*10**-e)]},
+()=>{let a=R(2,5),b=R(2,4),e1=R(2,6),e2=R(2,6);return[`Work out (${a} × 10<sup>${e1}</sup>) × (${b} × 10<sup>${e2}</sup>). Give your answer in standard form.`,stf(a*b*10**(e1+e2))]},
+()=>{let b=P([2,3]),a=R(2,3),e1=R(5,9),e2=R(2,4);return[`Work out (${a*b} × 10<sup>${e1}</sup>) ÷ (${b} × 10<sup>${e2}</sup>). Give your answer in standard form.`,stm(a,e1-e2)]}],[
+()=>{let m=R(21,89)/10,n=R(21,89)/10,e1=R(3,7),e2=R(2,4);return[`Work out (${stm(m,e1)}) × (${stm(n,-e2)}). Give your answer in standard form.`,stf(m*n*10**(e1-e2))]},
+()=>{let m=R(11,99)/10,n=R(11,99)/10;return[`Work out (${stm(m,5)}) + (${stm(n,4)}). Give your answer in standard form.`,stf(m*1e5+n*1e4)]}]),
+mk('Upper and lower bounds','bound,error interval,accuracy',[
+()=>{let u=P([1,10,100,0.1]),v=u*R(2,40);return[`A length is ${N(v)} cm, rounded to the nearest ${N(u)} cm. Write its lower and upper bounds.`,`${N(v-u/2)} cm ≤ length < ${N(v+u/2)} cm`]},
+()=>{let a=R(11,99)/10;return[`x = ${N(a)} correct to 1 decimal place. Write the error interval for x.`,`${N(a-.05)} ≤ x < ${N(a+.05)}`]},
+()=>{let l=R(5,15),w=R(4,10);return[`A rectangle is ${l} cm by ${w} cm, each measurement to the nearest cm. Find the upper bound of its perimeter.`,N(2*(l+w+1))+' cm']},
+()=>{let l=R(5,15),w=R(4,10);return[`A rectangle is ${l} cm by ${w} cm, each measurement to the nearest cm. Find the lower bound of its area.`,N((l-.5)*(w-.5))+' cm²']}],[
+()=>{let a=R(31,99)/10,b=R(21,89)/10;return[`a = ${N(a)} and b = ${N(b)}, both to 1 d.p. Work out the upper bound of a × b.`,N((a+.05)*(b+.05))]},
+()=>{let a=R(31,99)/10,b=R(21,89)/10;return[`a = ${N(a)} and b = ${N(b)}, both to 1 d.p. Work out the lower bound of a ÷ b. Give 3 s.f.`,sfs((a-.05)/(b+.05),3)]},
+()=>{let d=R(40,90),t=R(11,39)/10;return[`A car travels ${d} km (to the nearest km) in ${N(t)} hours (to the nearest 0.1 h). Find the upper bound of its average speed, to 3 s.f.`,sfs((d+.5)/(t-.05),3)+' km/h']}]),
+mk('Index laws','index,indices,power',[
+()=>{let a=R(2,8),b=R(2,8);return[`Simplify ${sup('x',a)} × ${sup('x',b)}`,sup('x',a+b)]},
+()=>{let b=R(2,6),a=b+R(2,6);return[`Simplify ${sup('y',a)} ÷ ${sup('y',b)}`,sup('y',a-b)]},
+()=>{let a=R(2,5),b=R(2,4);return[`Simplify (${sup('m',a)})<sup>${b}</sup>`,sup('m',a*b)]},
+()=>{let a=R(2,6),b=R(2,5),c=R(2,3),d=R(2,4);return[`Simplify ${a}${sup('a',c)} × ${b}${sup('a',d)}`,`${a*b}${sup('a',c+d)}`]},
+()=>{let b=P([2,3,4,5]),k=R(2,3);return[`Work out ${b}<sup>−${k}</sup>`,frac(1,b**k)]},
+()=>{let a=R(2,5),b=R(2,4);return[`Simplify (${a}${sup('x',b)})<sup>2</sup>`,`${a*a}${sup('x',2*b)}`]},
+()=>[`Work out ${P([3,5,7,12])}<sup>0</sup>`,1]],[
+()=>{let b=R(2,9),k=R(3,6);return[`Work out ${b}<sup>${k}</sup>`,N(b**k)]},
+()=>{let x=R(11,29)/10,k=R(3,4);return[`Work out ${N(x)}<sup>${k}</sup>`,N(x**k)]},
+()=>{let b=R(2,9),a=R(6,9),c=R(2,4);return[`Work out ${b}<sup>${a}</sup> ÷ ${b}<sup>${c}</sup>`,N(b**(a-c))]}]),
+mk('Prime factors, HCF and LCM','prime,hcf,lcm,factor,multiple',[
+()=>{let n=P([36,48,60,72,84,90,96,120,126,140,150,180,196,210]);return[`Write ${n} as a product of its prime factors.`,pf(n)]},
+()=>{let g=P([2,3,4,5,6]),m=P([[2,3],[3,4],[2,5],[3,5],[4,5],[5,6],[3,7]]);return[`Find the HCF and LCM of ${g*m[0]} and ${g*m[1]}.`,`HCF = ${g}, LCM = ${g*m[0]*m[1]}`]},
+()=>{let[a,b]=P([[6,8],[10,15],[12,18],[9,12],[8,12],[15,20]]);return[`Two buses leave a station together. One leaves every ${a} minutes and the other every ${b} minutes. After how many minutes do they next leave together?`,lcm(a,b)+' minutes']},
+()=>{let n=P([51,57,87,91,111,119,133,143,161,53,59,61,67,71,73,79,83,89,97]);let f=pf(n);return[`Is ${n} a prime number? Give a reason.`,f.includes('×')?`No: ${n} = ${f}`:'Yes: its only factors are 1 and itself']}],[
+()=>{let n=P([756,924,1050,1260,1386,1470,1800,2310]);return[`Write ${N(n)} as a product of its prime factors.`,pf(n)]},
+()=>{let g=P([6,12,14,15,18]),m=P([[5,7],[7,8],[5,9],[7,11],[8,9]]);return[`Find the HCF and LCM of ${g*m[0]} and ${g*m[1]}.`,`HCF = ${g}, LCM = ${N(g*m[0]*m[1])}`]}]),
+mk('Fractions, decimals and percentages','fraction,decimal,percent,fdp',[
+()=>{let[n,d]=P([[3,8],[5,8],[7,20],[9,40],[11,25],[13,50],[7,16]]);return[`Write ${frac(n,d)} as a decimal and as a percentage.`,`${N(n/d)} = ${N(n/d*100)}%`]},
+()=>{let q=P([35,45,12,64,28,52,15,84,24,68]),g=gcd(q,100);return[`Write ${q}% as a fraction in its simplest form.`,frac(q/g,100/g)]},
+()=>{let[n,d]=P([[45,100],[8,100],[125,1000],[65,100],[875,1000],[36,100],[4,100],[35,100],[375,1000]]),g=gcd(n,d);return[`Write ${n/d} as a fraction in its simplest form.`,frac(n/g,d/g)]},
+()=>{let[a,b]=P([[3,5],[5,8],[7,10],[11,20],[17,25]]),fv=a/b,x=fv+P([.03,-.03]),y=fv+P([.015,-.015]);let it=[[frac(a,b),fv],[N(x),x],[N(y*100)+'%',y]];return[`Put these in order, smallest first: ${it.map(i=>i[0]).join(', ')}`,[...it].sort((u,v)=>u[1]-v[1]).map(i=>i[0]).join(' < ')]}],[
+()=>{let b=P([40,45,48,60,65,75]),a=R(11,b-5);return[`Write ${a} out of ${b} as a percentage. Give your answer to 1 d.p.`,(a/b*100).toFixed(1)+'%']},
+()=>{let d=P([7,9,11,13]),n=R(1,d-1);return[`Write ${frac(n,d)} as a decimal to 3 d.p.`,(n/d).toFixed(3)]}]),
+mk('Ratio','ratio,share,equivalent',[
+()=>{let g=R(2,9),m=P([[2,3],[3,5],[4,7],[5,6],[2,5]]);return[`Simplify the ratio ${g*m[0]} : ${g*m[1]}`,`${m[0]} : ${m[1]}`]},
+()=>{let[a,b]=P([[2,3],[3,5],[4,5],[1,4],[3,7]]),k=R(2,12)*5;return[`Share £${(a+b)*k} in the ratio ${a} : ${b}.`,`£${a*k} and £${b*k}`]},
+()=>{let[a,b,c]=P([[1,2,3],[2,3,5],[3,4,5],[1,3,4]]),k=R(2,9);return[`Share ${k*(a+b+c)} kg in the ratio ${a} : ${b} : ${c}.`,`${a*k} kg, ${b*k} kg and ${c*k} kg`]},
+()=>{let[a,b]=P([[3,4],[2,5],[5,7]]),k=R(3,9);return[`Complete the equivalent ratio: ${a} : ${b} = ${a*k} : ?`,b*k]},
+()=>{let[a,b]=P([[3,4],[2,3],[5,6],[4,7]]),k=R(3,9);return[`The ratio of boys to girls in a club is ${a} : ${b}. There are ${b*k} girls. How many boys are there?`,a*k]}],[
+()=>{let[a,b]=P([[3,5],[2,7],[5,8],[4,9]]),k=R(40,300)/4;return[`Share £${N((a+b)*k)} in the ratio ${a} : ${b}.`,`${gbp(a*k)} and ${gbp(b*k)}`]},
+()=>{let[a,b]=P([[7,5],[8,5],[9,4],[7,3]]),k=R(12,60);return[`In a school, the ratio of pupils having packed lunch to school dinners is ${a} : ${b}. ${(a+b)*k} pupils were surveyed. How many had each?`,`${a*k} packed lunch, ${b*k} school dinners`]},
+()=>{let[a,b]=P([[4,7],[5,12],[8,18],[20,13]]);return[`Write ${a} : ${b} in the form 1 : n.`,`1 : ${N(b/a)}`]}]),
+mk('Congruence and similarity','congruen,similar,enlarge,scale factor',[
+()=>{let a=R(3,8),k=P([2,3,4,1.5,2.5]),b=R(4,9);return[`Triangles ABC and DEF are similar. AB = ${a} cm and the matching side DE = ${N(a*k)} cm. BC = ${b} cm. Find EF.`,N(b*k)+' cm']},
+()=>{let k=R(2,5);return[`A shape is enlarged by scale factor ${k}. By what factor do its area and volume (if 3D) increase?`,`Area × ${k*k}, volume × ${k**3}`]},
+()=>{let a=R(3,9),b=R(3,9),k=R(2,4);return[`A ${a} cm by ${b} cm rectangle is enlarged by scale factor ${k}. Find the area of the enlarged rectangle.`,N(a*b*k*k)+' cm²']},
+()=>{let x=R(5,8),y=R(5,8),z=R(6,9),a=R(40,80),t=R(0,2);return t==0?[`Triangle 1 has sides ${x} cm, ${y} cm, ${z} cm. Triangle 2 also has sides ${x} cm, ${y} cm, ${z} cm. Are they congruent? Give the reason.`,'Yes: SSS']:t==1?[`Two triangles each have sides ${x} cm and ${y} cm with an angle of ${a}° between them. Are they congruent? Give the reason.`,'Yes: SAS']:[`Two triangles both have angles ${a}°, ${a+20}° and ${160-2*a}°. Must they be congruent?`,'No: equal angles only make them similar (AAA does not prove congruence)']}],[
+()=>{let ab=R(51,95)/10,de=R(101,149)/10,bc=R(41,89)/10;return[`Triangles ABC and DEF are similar. AB = ${N(ab)} cm, DE = ${N(de)} cm, BC = ${N(bc)} cm. Find EF to 2 d.p.`,(bc*de/ab).toFixed(2)+' cm']},
+()=>{let a=R(3,7),b=R(a+2,12),s=R(12,60);return[`Two similar shapes have matching lengths ${a} cm and ${b} cm. The smaller has area ${s} cm². Find the area of the larger to 3 s.f.`,sfs(s*(b/a)**2,3)+' cm²']}]),
+mk('Proportion','proportion,direct,inverse,unitary,recipe,scale',[
+()=>{let n1=R(3,8),n2=R(n1+2,15),q=P([.5,.75,1.25,1.5,2.5,3.5,4.5]);return[`${n1} pens cost ${gbp(n1*q)}. How much do ${n2} pens cost?`,gbp(n2*q)]},
+()=>{let a=P([4,6]),b=R(8,15),pp=R(2,9)*10;return[`A recipe for ${a} people uses ${a*pp} g of flour. How much flour is needed for ${b} people?`,b*pp+' g']},
+()=>{let w1=P([12,24]),d1=2*R(1,4),w2=P([2,3,4,6,8]);return[`${w1} workers take ${d1} days to build a wall. How long would ${w2} workers take (all working at the same rate)?`,w1*d1/w2+' days']},
+()=>{let s=P([25000,50000,10000,20000]),cm=R(21,95)/10;return[`A map has scale 1 : ${N(s)}. A road is ${N(cm)} cm long on the map. How long is the real road in km?`,N(cm*s/100000)+' km']}],[
+()=>{let w1=P([250,400,500]),p1=R(150,260)/100,w2=w1*1.5,p2=Math.round(p1*1.5*100*P([.95,1.04]))/100,x1=p1/w1*100,x2=p2/w2*100;return[`Which is better value? ${w1} g for ${gbp(p1)} or ${N(w2)} g for ${gbp(p2)}.`,`${w1} g: ${gbp(x1)} per 100 g; ${N(w2)} g: ${gbp(x2)} per 100 g → ${x1<x2?w1+' g':N(w2)+' g'} is better value`]},
+()=>{let r=P([1.14,1.17,1.21,1.28]),e=R(200,900);return[`£1 = €${r}. Convert €${e} to pounds, to the nearest penny.`,gbp(e/r)]}]),
+mk('Speed, distance, time; density, mass, volume','speed,distance,time,density,mass,volume',[
+()=>{let v=R(4,12)*5,t=R(2,5);return[`A car travels at ${v} km/h for ${t} hours. How far does it go?`,v*t+' km']},
+()=>{let v=P([36,48,60,72]),m=P([20,30,45,15]);return[`A train travels ${v*m/60} miles in ${m} minutes. Find its average speed in mph.`,v+' mph']},
+()=>{let d=P([2,3,4,5,8,9]),V=R(5,30);return[`A metal block has mass ${d*V} g and volume ${V} cm³. Work out its density.`,d+' g/cm³']},
+()=>{let[a,b]=P([[36,10],[72,20],[108,30],[18,5],[54,15]]);return[`Convert ${a} km/h to m/s.`,b+' m/s']},
+()=>{let v1=P([40,60,30]),v2=P([60,40,90]),d1=v1*P([1,2,1.5]),d2=v2*P([1,1.5,2]);return[`A journey has two stages: ${d1} km at ${v1} km/h, then ${d2} km at ${v2} km/h. Find the average speed for the whole journey.`,N((d1+d2)/(d1/v1+d2/v2))+' km/h']}],[
+()=>{let d=R(21,98)/10,V=R(120,480)/10;return[`A metal has density ${N(d)} g/cm³. A piece has volume ${N(V)} cm³. Work out its mass.`,N(d*V)+' g']},
+()=>{let d=R(100,400),t=R(11,59)/2;return[`A runner covers ${d} m in ${N(t)} s. Work out the average speed in m/s to 2 d.p.`,(d/t).toFixed(2)+' m/s']},
+()=>{let d=R(100,300),v=P([45,55,65,70,80]),h=Math.floor(d/v),m=Math.round((d/v-h)*60);return[`A journey of ${d} km is driven at an average speed of ${v} km/h. How long does it take, in hours and minutes (nearest minute)?`,`${h} h ${m} min`]}]),
+mk('Bearings','bearing,compass',[
+()=>{let b=R(1,70)*5;return[`The bearing of B from A is ${pd(b)}°. Work out the bearing of A from B.`,pd(b<180?b+180:b-180)+'°']},
+()=>{let[w,b]=P([['north-east','045'],['south-east','135'],['south-west','225'],['north-west','315'],['south','180'],['west','270']]);return[`Write down the bearing for ${w}.`,b+'°']},
+()=>{let b=R(2,34)*10,t=P([60,90,120,150]);return[`A boat is heading on a bearing of ${pd(b)}°. It turns ${t}° anticlockwise. What is its new bearing?`,pd((b-t+360)%360)+'°']}],[
+()=>{let d=R(6,20),a=P([20,25,30,35,40,50,55,65]),r=a*Math.PI/180;return[`A ship sails ${d} km on a bearing of ${pd(a)}°. How far north and how far east has it travelled? Give each to 2 d.p.`,`North ${(d*Math.cos(r)).toFixed(2)} km, East ${(d*Math.sin(r)).toFixed(2)} km`]},
+()=>{let n=R(4,12),e=R(3,10),dg=Math.atan(e/n)*180/Math.PI;return[`A walker goes ${n} km north then ${e} km east. Find the bearing of the finish from the start, to 1 d.p.`,'0'+dg.toFixed(1)+'°']}]),
+mk('Loci','loci,locus',LOCI),
+mk('Construction','construct,bisector,compass',[
+()=>{let[a,b,c]=P([[3,4,5],[6,8,10],[5,12,13],[9,12,15]]);return[`Using ruler and compasses, construct a triangle with sides ${a} cm, ${b} cm and ${c} cm.`,`Draw the ${c} cm base, then arcs of radius ${a} cm and ${b} cm from each end; join the crossing point. Check: there is a right angle (90°) opposite the ${c} cm side.`]},
+()=>{let l=R(6,10);return[`Draw a line AB of ${l} cm and construct its perpendicular bisector.`,`Compass arcs (same radius, more than ${N(l/2)} cm) from A and B cross above and below. The line through them meets AB at 90° at ${N(l/2)} cm from A.`]},
+()=>{let a=P([40,50,70,80,100,120]);return[`Draw an angle of ${a}° with a protractor, then bisect it using compasses.`,`Each half should measure ${a/2}°.`]},
+()=>{let s=R(4,7);return[`Construct an equilateral triangle with sides ${s} cm using compasses.`,`All three sides ${s} cm and all three angles 60°.`]},
+()=>{let c=R(6,9),A=P([40,50,60,70]),B=P([45,55,65]);return[`Construct triangle ABC with AB = ${c} cm, angle A = ${A}° and angle B = ${B}°.`,`Angle C = ${180-A-B}°. Rays from A and B at the given angles meet at C.`]}],[
+()=>{let a=R(5,8),b=R(5,8),c=R(4,9),d=x=>Math.acos(x)*180/Math.PI;let A=d((b*b+c*c-a*a)/(2*b*c)),B=d((a*a+c*c-b*b)/(2*a*c));return[`Construct triangle PQR with sides ${a} cm, ${b} cm and ${c} cm (compasses). Then measure the angles.`,`Angles are about ${A.toFixed(1)}°, ${B.toFixed(1)}° and ${(180-A-B).toFixed(1)}° (accept ±2° when measured).`]},
+()=>LOCI[1]().length?[`Construct the perpendicular bisector of a ${R(5,9)} cm line AB.`,'A straight line at 90° through the midpoint of AB, using equal arcs from A and B.']:0]),
+mk('Parallel lines and angle rules','parallel,alternate,corresponding,angle rule,angles on a',[
+()=>{let a=R(35,145),t=P(['alternate','corresponding','co-interior (allied)','vertically opposite']);return[`Two parallel lines are crossed by a transversal. One angle is ${a}°. What is the size of the angle that is ${t} to it?`,(t[0]=='c'&&t[2]=='-'?180-a:a)+'°']},
+()=>{let x=R(15,35),a=R(5,15),b=R(5,15),c=180-4*x-a-b;return[`The angles of a triangle are (x + ${a})°, (2x + ${b})° and (x + ${c})°. Find x and the three angles.`,`x = ${x}; angles ${x+a}°, ${2*x+b}°, ${x+c}°`]},
+()=>{let x=R(8,20),pp=R(3,5),r=R(2,pp-1),q=R(5,25),s=(pp-r)*x+q;return[`Two alternate angles are (${pp}x + ${q})° and (${r}x + ${s})°. Find x and the size of the angles.`,`x = ${x}; each angle = ${pp*x+q}°`]},
+()=>{let pp=R(2,4),r=R(2,4),x=R(10,25),q=R(5,30),s=180-(pp+r)*x-q;return[`Two co-interior angles are (${pp}x + ${q})° and (${r}x ${sg(s)})°. Find x.`,`x = ${x} (angles ${pp*x+q}° and ${r*x+s}°)`]},
+()=>{let a=R(60,110),b=R(60,110),c=R(50,100);return[`Angles around a point are ${a}°, ${b}°, ${c}° and x°. Find x.`,360-a-b-c+'°']}]),
+mk('Angles in polygons','polygon,interior,exterior',[
+()=>{let s=R(5,12);return[`Work out the sum of the interior angles of a ${PN[s]}.`,(s-2)*180+'°']},
+()=>{let s=P([5,6,8,9,10,12]);return[`Work out each interior angle of a regular ${PN[s]}.`,(s-2)*180/s+'°']},
+()=>{let e=P([10,12,15,18,20,24,30,36,40,45]);return[`Each exterior angle of a regular polygon is ${e}°. How many sides does it have?`,360/e]},
+()=>{let a=R(90,130),b=R(90,130),c=R(90,130),d=R(90,130);return[`Four angles of a pentagon are ${a}°, ${b}°, ${c}° and ${d}°. Find the fifth angle.`,540-a-b-c-d+'°']},
+()=>{let i=P([120,135,140,144,150,156,160,162,165,168,170,172]);return[`Each interior angle of a regular polygon is ${i}°. How many sides does it have?`,360/(180-i)]}],[
+()=>{let s=R(13,25);return[`Work out the sum of the interior angles of a polygon with ${s} sides.`,N((s-2)*180)+'°']},
+()=>{let s=P([7,9,11,13]);return[`Work out each interior angle of a regular polygon with ${s} sides, to 1 d.p.`,((s-2)*180/s).toFixed(1)+'°']},
+()=>{let a=[0,0,0,0,0].map(()=>R(110,140));return[`Five angles of a hexagon are ${a.join('°, ')}°. Find the sixth angle.`,720-a.reduce((u,v)=>u+v)+'°']}]),
+mk('Percentages','percent,increase,decrease,interest',[
+()=>{let q=P([5,10,15,20,25,30,35,40,60,75]),a=R(2,30)*20;return[`Find ${q}% of ${a}.`,N(q*a/100)]},
+()=>{let a=R(4,20)*20,q=P([10,20,25,30,5]);return[`Increase £${a} by ${q}%.`,gbp(a*(100+q)/100)]},
+()=>{let o=R(2,20)*20,q=P([10,20,25,50]);return[`After a ${q}% increase, a price is £${o*(100+q)/100}. What was the original price?`,'£'+o]}],[
+()=>{let a=R(5,30)*100,q=P([2,3,4,5]),y=P([2,3]);return[`£${N(a)} is invested at ${q}% compound interest per year for ${y} years. Find the value at the end, to the nearest penny.`,gbp(a*(1+q/100)**y)]},
+()=>{let a=R(40,200),b=a+R(5,40);return[`A price rises from £${a} to £${b}. Find the percentage increase to 1 d.p.`,((b-a)/a*100).toFixed(1)+'%']}],true),
+mk('Solving equations','equation,solve,algebra',[
+()=>{let a=R(2,9),b=R(1,15),x=R(-5,9);return[`Solve ${a}x + ${b} = ${N(a*x+b)}`,'x = '+N(x)]},
+()=>{let a=R(2,6),b=R(1,6),x=R(1,9);return[`Solve ${a}(x + ${b}) = ${a*(x+b)}`,'x = '+x]},
+()=>{let pp=R(4,9),r=R(1,pp-1),x=R(6,12),q=R(1,5),s=(pp-r)*x-q;return[`Solve ${pp}x − ${q} = ${r}x + ${s}`,'x = '+x]}],[
+()=>{let a=P([1.5,2.5,3.5,4.5]),b=R(11,59)/10,x=R(2,9);return[`Solve ${N(a)}x + ${N(b)} = ${N(a*x+b)}`,'x = '+x]},
+()=>{let a=R(2,9),k=R(2,9),b=R(1,9);return[`Solve x/${a} + ${b} = ${k+b}`,'x = '+a*k]}],true),
+mk('Pythagoras','pythag,right-angled',[
+()=>{let[a,b,c]=P([[3,4,5],[5,12,13],[8,15,17],[7,24,25]]),k=P([1,2]);return[`A right-angled triangle has shorter sides ${a*k} cm and ${b*k} cm. Find the hypotenuse.`,c*k+' cm']},
+()=>{let[a,b,c]=P([[3,4,5],[5,12,13],[8,15,17]]),k=P([1,2]);return[`A right-angled triangle has hypotenuse ${c*k} cm and one shorter side ${a*k} cm. Find the other side.`,b*k+' cm']}],[
+()=>{let a=R(41,99)/10,b=R(41,99)/10;return[`A right-angled triangle has shorter sides ${N(a)} cm and ${N(b)} cm. Find the hypotenuse to 1 d.p.`,Math.hypot(a,b).toFixed(1)+' cm']},
+()=>{let c=R(101,150)/10,a=R(41,99)/10;return[`A right-angled triangle has hypotenuse ${N(c)} cm and one shorter side ${N(a)} cm. Find the other side to 1 d.p.`,Math.sqrt(c*c-a*a).toFixed(1)+' cm']}],true)];
+const sel=new Set(TOP.map((t,i)=>i).filter(i=>!TOP[i].x)),$=id=>document.getElementById(id);let cur=null;
+function chips(){$('chips').innerHTML=TOP.map((t,i)=>`<button class="chip${sel.has(i)?' on':''}${t.x?' x':''}" onclick="tg(${i})">${t.name}${t.x?' (extra)':''}</button>`).join('')}
+function tg(i){sel.has(i)?sel.delete(i):sel.add(i);chips()}
+function selAll(m){sel.clear();TOP.forEach((t,i)=>{if(m==2||(m==1&&!t.x))sel.add(i)});chips()}
+function addT(){const raw=$('typed').value,bad=[];raw.split(/[,;\n]/).forEach(t=>{t=t.trim().toLowerCase();if(!t)return;const m=TOP.map((o,i)=>[o,i]).filter(([o])=>t.length>2&&(o.name.toLowerCase()+','+o.kw).split(',').some(k=>{k=k.trim();return k.length>2&&(t.includes(k)||k.includes(t))}));m.length?m.forEach(([o,i])=>sel.add(i)):bad.push(t)});$('typed').value='';$('msg').textContent=bad.length?'No question type for “'+bad.join('”, “')+'” yet. Ask Claude to add it to this tool.':'';chips()}
+function make(re){const ids=[...sel];if(!ids.length){$('msg').textContent='Pick at least one topic first.';return}seed=Math.floor(Math.random()*1e9);const s0=seed,order=ids.sort(()=>rnd()-.5),L=[],seen=new Set();
+for(let i=0;i<30;i++){const t=TOP[order[i%order.length]],arr=i<15?t.n:t.c;let r=null;for(let k=0;k<30;k++){try{r=P(arr)()}catch(e){r=null}if(r&&!seen.has(r[0]))break;r=r||null}seen.add(r[0]);L.push({q:r[0],a:r[1],t:t.name})}
+cur={L,s0};show()}
+function show(){const{L,s0}=cur;const q=(a,b)=>L.slice(a,b).map((x,i)=>`<li class="q"><b>${a+i+1}.</b><div>${x.q}<div class="tag">${x.t}</div></div></li>`).join('');
+$('out').innerHTML=`<div class="row ui"><button class="b g" onclick="$('key').classList.toggle('show')">Show / hide answer key</button><button class="b" id="d1" onclick="dl('q')">⬇ Questions PDF</button><button class="b" id="d2" onclick="dl('k')">⬇ Answer key PDF</button><button class="b g" onclick="pr('pq')">Print questions</button><button class="b g" onclick="pr('pk')">Print answer key</button></div><div id="msg2" class="mu ui"></div>
+<div id="paper" class="card"><div class="hd"><b>KS3 Maths Revision (Medium)</b><span>Name: ____________ Date: ______ Score: ___ / 30</span></div>
+<div class="mu">Paper code ${s0.toString(36).toUpperCase()}</div>
+<div class="sec">Section A: No calculator (Questions 1–15)</div><ol class="qs">${q(0,15)}</ol>
+<div class="sec">Section B: Calculator allowed (Questions 16–30)</div><ol class="qs">${q(15,30)}</ol></div>
+<div id="key"><div class="hd"><b>Answer key</b><span class="mu">Paper code ${s0.toString(36).toUpperCase()}</span></div>${L.map((x,i)=>`<div class="k"><b style="min-width:2.2em">${i+1}.</b><div>${x.a}</div></div>`).join('')}</div>`;
+window.scrollTo({top:$('out').offsetTop-10,behavior:'smooth'})}
+function pr(c){document.body.className=c;try{window.print()}finally{document.body.className=''}}
+let DL=null;try{(window.claude&&claude.use?claude.use('downloads'):Promise.resolve(null)).then(d=>{DL=d}).catch(()=>{})}catch(e){}
+function mkPdf(J){const enc=new TextEncoder(),parts=[],offs=[];let len=0;const add=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);len+=b.length};const obj=(n,f)=>{offs[n]=len;add(`${n} 0 obj\n`);f();add('\nendobj\n')};const n=J.length;add('%PDF-1.4\n');
+obj(1,()=>add('<< /Type /Catalog /Pages 2 0 R >>'));obj(2,()=>add(`<< /Type /Pages /Count ${n} /Kids [${J.map((_,i)=>`${3+3*i} 0 R`).join(' ')}] >>`));
+J.forEach((j,i)=>{const g=3+3*i,cs='q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';obj(g,()=>add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${g+2} 0 R >> >> /Contents ${g+1} 0 R >>`));obj(g+1,()=>add(`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`));obj(g+2,()=>{add(`<< /Type /XObject /Subtype /Image /Width ${j.w} /Height ${j.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${j.b.length} >>\nstream\n`);add(j.b);add('\nendstream')})});
+const xr=len,T=3+3*n;add(`xref\n0 ${T}\n0000000000 65535 f \n`);for(let i=1;i<T;i++)add(String(offs[i]).padStart(10,'0')+' 00000 n \n');add(`trailer\n<< /Size ${T} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`);return new Blob(parts,{type:'application/pdf'})}
+async function dl(w){const m=$('msg2');if(!DL){m.textContent='PDF download is not available in this view. Use Print and choose Save as PDF instead.';return}if(typeof html2canvas!=='function'){m.textContent='PDF tool did not load. Please refresh and try again.';return}
+const bs=[$('d1'),$('d2')];bs.forEach(b=>b.disabled=true);m.textContent='Making PDF…';const root=document.createElement('div');root.className='pdfroot';
+try{const src=$(w=='q'?'paper':'key').cloneNode(true);src.removeAttribute('id');src.classList.add('pc');root.appendChild(src);document.body.appendChild(root);
+if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+const rt=root.getBoundingClientRect().top,bl=[...root.querySelectorAll('.hd,.sec,.q,.k,.mu')].map(e=>{const r=e.getBoundingClientRect();return{top:r.top-rt,bottom:r.bottom-rt}});
+const S=2,cv=await html2canvas(root,{scale:S,backgroundColor:'#fff'}),USE=1043,pg=[];let st=bl[0].top,lb=st;bl.forEach(b=>{if(b.bottom-st>USE&&lb>st){pg.push([st,lb]);st=b.top}lb=b.bottom});pg.push([st,lb]);
+const J=pg.map(([s,e])=>{const c=document.createElement('canvas');c.width=794*S;c.height=1123*S;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(cv,0,s*S,cv.width,(e-s)*S,0,40*S,cv.width,(e-s)*S);const d=atob(c.toDataURL('image/jpeg',.92).split(',')[1]);return{b:Uint8Array.from(d,ch=>ch.charCodeAt(0)),w:c.width,h:c.height}});
+const code=cur.s0.toString(36).toUpperCase();await DL.save({filename:`KS3-Maths-${w=='q'?'Questions':'AnswerKey'}-${code}.pdf`,data:mkPdf(J)});m.textContent='Saved ✓'}
+catch(e){m.textContent=e&&e.code=='declined'?'Download cancelled.':'Could not make the PDF here. Use Print and choose Save as PDF instead.'}
+finally{root.remove();bs.forEach(b=>b.disabled=false)}}
+chips();
+</script></body></html>
