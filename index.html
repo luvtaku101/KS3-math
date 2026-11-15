@@ -39,6 +39,13 @@ body.pk #paper,body.pk .ui{display:none}body.pk #key{display:block}
 .pdfroot{position:absolute;left:-10000px;top:0;width:794px;padding:40px;background:#fff;color:#000;font:15px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;--tx:#000;--mu:#555;--bd:#bbb;--ac2:#e5e7eb;--card:#fff;--key:#fff}
 .pdfroot .pc{display:block!important;border:0!important;padding:0!important;margin:0!important;background:#fff!important}
 .pdfroot .q{min-height:var(--sp,110px)}
+.pdfroot .ui{display:none!important}
+.mkb{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;align-items:flex-start}.mkb button{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;min-width:36px;padding:5px 9px;cursor:pointer;font-size:.95rem}
+.mkb button.ok{background:#16a34a;color:#fff;border-color:#16a34a}.mkb button.no{background:#dc2626;color:#fff;border-color:#dc2626}.mkb button.pt{background:#f59e0b;color:#fff;border-color:#f59e0b}
+#sbar{position:sticky;bottom:0;background:var(--key);border-top:2px solid var(--tx);padding:10px 0 4px;margin-top:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-weight:600}
+table.sc{width:100%;border-collapse:collapse;font-size:.88rem;margin:6px 0}table.sc td,table.sc th{border-bottom:1px solid var(--bd);padding:6px 4px;text-align:left}
+.pb{height:9px;background:var(--bd);border-radius:5px;overflow:hidden;min-width:80px}.pb i{display:block;height:100%}
+.pl{display:flex;flex-direction:column;gap:6px}.pl button{text-align:left}
 </style><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script></head><body><div class="w">
 <div class="ui">
 <h1>📐 KS3 Maths Revision Generator</h1>
@@ -52,6 +59,7 @@ body.pk #paper,body.pk .ui{display:none}body.pk #key{display:block}
 <div class="row"><b>3. Working space:</b><button class="chip" id="s1" onclick="sp(60)">Small</button><button class="chip on" id="s2" onclick="sp(110)">Medium</button><button class="chip" id="s3" onclick="sp(180)">Large</button></div>
 <div class="row"><b>4. Question style:</b><button class="chip on" id="gm" onclick="qsv('g')">GCSE mixed (marks, multiple choice, “is he correct?”)</button><button class="chip" id="gp" onclick="qsv('p')">Plain</button></div>
 <div class="row"><button class="b" onclick="make()">Generate 30 questions</button><button class="b g" onclick="make(1)">Same topics, new paper</button></div>
+<div class="card" id="scores"></div>
 </div>
 <div id="out"></div>
 </div>
@@ -363,21 +371,41 @@ const angleXs=()=>{let[a,b]=P([[2,3],[4,7],[2,6],[3,5],[1,2],[2,7],[3,8]]),x=180
 const congWhich=()=>{if(rnd()<.5)return[`Which of these can be used to prove two triangles are congruent? ${sh(['AAA','AAS','SAS','RHS','SSS','SSA','ASA']).join(', ')}`,'AAS, SAS, RHS, SSS and ASA',W(`AAA: same angles but different sizes are possible (similar, not congruent)`,`SSA: two different triangles can be made, so it does not prove congruence`,`The other five do fix the triangle completely`)];let X=P(['AAA','SSA']);return[`Explain why ${X} cannot be used to prove that two triangles are congruent.`,X=='AAA'?'Triangles with the same three angles can be different sizes, so they are similar but not necessarily congruent.':'Two different triangles can be drawn with the same two sides and a non-included angle, so SSA does not fix the triangle.',W(X=='AAA'?`Example: a small and a large equilateral triangle both have angles 60°, 60°, 60°`:`With the angle not between the two sides, the third side can swing to two positions`,`So ${X} cannot prove congruence`)]};
 {const t=TOP[11];t.n.push(congAng,gridMany,congProve,angleXs,congWhich,congProve);t.c.push(congAng,angleXs,congProve);t.h=[()=>P([congProve,angleXs,gridMany,congWhich,congAng])(),()=>P([congProve,angleXs,t.c[1],congAng])()]}
 const sel=new Set(TOP.map((t,i)=>i).filter(i=>!TOP[i].x)),$=id=>document.getElementById(id);let cur=null;
-function chips(){$('chips').innerHTML=TOP.map((t,i)=>`<button class="chip${sel.has(i)?' on':''}${t.x?' x':''}" onclick="tg(${i})">${t.name}${t.x?' (extra)':''}</button>`).join('')}
+const az=s=>s.replace(/^[^A-Za-z]+/,'').toLowerCase();
+function chips(){$('chips').innerHTML=TOP.map((t,i)=>[t,i]).sort((a,b)=>az(a[0].name).localeCompare(az(b[0].name))).map(([t,i])=>`<button class="chip${sel.has(i)?' on':''}${t.x?' x':''}" onclick="tg(${i})">${t.name}${t.x?' (extra)':''}</button>`).join('')}
 function tg(i){sel.has(i)?sel.delete(i):sel.add(i);chips()}
 function selAll(m){sel.clear();TOP.forEach((t,i)=>{if(m==2||(m==1&&!t.x))sel.add(i)});chips()}
 function addT(){const raw=$('typed').value,bad=[];raw.split(/[,;\n]/).forEach(t=>{t=t.trim().toLowerCase();if(!t)return;const m=TOP.map((o,i)=>[o,i]).filter(([o])=>t.length>2&&(o.name.toLowerCase()+','+o.kw).split(',').some(k=>{k=k.trim();return k.length>2&&(t.includes(k)||k.includes(t))}));m.length?m.forEach(([o,i])=>sel.add(i)):bad.push(t)});$('typed').value='';$('msg').textContent=bad.length?'No question type for “'+bad.join('”, “')+'” yet. Ask Claude to add it to this tool.':'';chips()}
 function make(re){const ids=[...sel];if(!ids.length){$('msg').textContent='Pick at least one topic first.';return}seed=Math.floor(Math.random()*1e9);const s0=seed,order=ids.sort(()=>rnd()-.5),L=[],seen=new Set();
 for(let i=0;i<30;i++){const t=TOP[order[i%order.length]],arr=LV=='h'?[t.h[i<15?0:1]]:(i<15?t.n:t.c);let r=null;for(let k=0;k<30;k++){try{r=P(arr)()}catch(e){r=null}if(r&&!seen.has(r[0]))break;r=r||null}seen.add(r[0]);L.push(sty(r,t.name))}
-cur={L,s0,lv:LV};show()}
+cur={L,s0,lv:LV,d:Date.now(),mks:{}};persist();show();renderScores()}
 function show(){const{L,s0,lv}=cur,tm=sum(L.map(x=>x.mk||1));const q=(a,b)=>L.slice(a,b).map((x,i)=>`<li class="q"><b>${a+i+1}.</b><div class="qc">${x.q}<div class="tag">${x.t}</div>${x.mk?`<div class="qm"><span class="al">${x.al?'Answer<span></span>':''}</span><span>[${x.mk} mark${x.mk>1?'s':''}]</span></div>`:''}</div></li>`).join('');
 $('out').innerHTML=`<div class="row ui"><button class="b g" onclick="$('key').classList.toggle('show')">Show / hide answer key</button><button class="b" id="d1" onclick="dl('q')">⬇ Questions PDF</button><button class="b" id="d2" onclick="dl('k')">⬇ Answer key PDF</button><button class="b g" onclick="pr('pq')">Print questions</button><button class="b g" onclick="pr('pk')">Print answer key</button></div><div id="msg2" class="mu ui"></div>
 <div id="paper" class="card"><div class="hd"><b>KS3 Maths Revision (${lv=='h'?'High':'Medium'})</b><span>Name: ____________ Date: ______ Score: ___ / ${tm}</span></div>
 <div class="mu">Paper code ${s0.toString(36).toUpperCase()} · Answer all questions · Marks are shown in brackets · Show your working · Total ${tm} marks</div>
 <div class="sec">Section A: No calculator (Questions 1–15)</div><ol class="qs">${q(0,15)}</ol>
 <div class="sec">Section B: Calculator allowed (Questions 16–30)</div><ol class="qs">${q(15,30)}</ol></div>
-<div id="key"><div class="hd"><b>Answer key</b><span class="mu">Paper code ${s0.toString(36).toUpperCase()}</span></div>${L.map((x,i)=>`<div class="k"><b style="min-width:2.2em">${i+1}.</b><div>${x.a}${x.w?`<div class="wk">${x.w}</div>`:''}</div></div>`).join('')}</div>`;
-window.scrollTo({top:$('out').offsetTop-10,behavior:'smooth'})}
+<div id="key"><div class="hd"><b>Answer key</b><span class="mu">Paper code ${s0.toString(36).toUpperCase()}</span></div><div class="mu ui">To mark: tap ✓ or ✗ for each question (or the number of marks she got), then tap Save score.</div>${L.map((x,i)=>`<div class="k"><b style="min-width:2.2em">${i+1}.</b><div style="flex:1">${x.a}${x.w?`<div class="wk">${x.w}</div>`:''}</div>${mkB(i)}</div>`).join('')}<div id="sbar" class="ui"></div></div>`;
+upd();window.scrollTo({top:$('out').offsetTop-10,behavior:'smooth'})}
+/* ---------- Marking & score tracking (saved on this device) ---------- */
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const code=s=>s.toString(36).toUpperCase(),dt=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+function persist(){let ps=LS.get('ks3papers').filter(p=>p.s0!=cur.s0);ps.unshift(cur);for(let n of[12,6,3,1])if(LS.set('ks3papers',ps.slice(0,n)))break}
+function mkB(i){const x=cur.L[i],m=x.mk||1,v=cur.mks[i],c=k=>v===undefined||v!=k?'':k==m?'ok':k==0?'no':'pt';const vals=m==1?[[1,'✓'],[0,'✗']]:[...Array(m+1).keys()].reverse().map(k=>[k,k]);return`<span class="ui mkb" id="m${i}">${vals.map(([k,l])=>`<button class="${c(k)}" onclick="setMk(${i},${k})">${l}</button>`).join('')}</span>`}
+function setMk(i,v){cur.mks[i]=v;$('m'+i).outerHTML=mkB(i);upd();persist();renderScores()}
+function tally(){let g=0,tm=0,n=0;cur.L.forEach((x,i)=>{tm+=x.mk||1;if(cur.mks[i]!==undefined){n++;g+=cur.mks[i]}});return{g,tm,n}}
+function upd(){const b=$('sbar');if(!b)return;const{g,tm,n}=tally(),left=cur.L.length-n;b.innerHTML=`<span>Marked ${n}/${cur.L.length} · Score ${g}/${tm}${n?` (${Math.round(g/tm*100)}%)`:''}</span><button class="b" onclick="saveSc()">Save score</button><span id="smsg" class="mu"></span>`}
+function saveSc(){const{g,tm,n}=tally(),left=cur.L.length-n;if(left){$('smsg').textContent=`Please mark all questions first (${left} left).`;return}const tp={};cur.L.forEach((x,i)=>{tp[x.t]=tp[x.t]||[0,0];tp[x.t][0]+=cur.mks[i];tp[x.t][1]+=x.mk||1});const c=code(cur.s0),sc=LS.get('ks3scores').filter(s=>s.c!=c);sc.unshift({c,d:Date.now(),lv:cur.lv,g,tm,tp});$('smsg').textContent=LS.set('ks3scores',sc)?'Score saved ✓ (see “Scores” at the top)':'Could not save on this device.';cur.saved=1;persist();renderScores()}
+function openP(s0){const p=LS.get('ks3papers').find(p=>p.s0==s0);if(!p)return;cur=p;cur.mks=cur.mks||{};show();$('key').classList.add('show');setTimeout(()=>$('key').scrollIntoView({behavior:'smooth'}),50)}
+function delSc(c){LS.set('ks3scores',LS.get('ks3scores').filter(s=>s.c!=c));renderScores()}
+let clr=0;function clrAll(){if(!clr){clr=1;renderScores();return}clr=0;LS.set('ks3scores',[]);LS.set('ks3papers',[]);renderScores()}
+function renderScores(){const ps=LS.get('ks3papers'),sc=LS.get('ks3scores'),T={};sc.forEach(s=>Object.entries(s.tp).forEach(([k,[g,m]])=>{T[k]=T[k]||[0,0];T[k][0]+=g;T[k][1]+=m}));
+const tr=Object.entries(T).map(([k,[g,m]])=>[k,g,m,g/m]).sort((a,b)=>a[3]-b[3]),col=p=>p<.5?'#dc2626':p<.75?'#f59e0b':'#16a34a';
+$('scores').innerHTML=`<h2 style="margin-top:0">📒 Marking & scores</h2><div class="mu">Saved on this device only, so always mark on the same iPad/computer and browser.</div>
+<h2>Mark a recent paper</h2>${ps.length?`<div class="pl">${ps.map(p=>{const n=Object.keys(p.mks||{}).length;return`<button class="b g" onclick="openP(${p.s0})">Paper ${code(p.s0)} · ${p.lv=='h'?'High':'Medium'} · ${dt(p.d)} · ${p.saved?'✓ score saved':n?`${n}/30 marked`:'not marked yet'}</button>`}).join('')}</div>`:'<div class="mu">Papers you make will appear here, so you can mark them after she has done the PDF.</div>'}
+<h2>Her scores</h2>${sc.length?`<table class="sc"><tr><th>Date</th><th>Paper</th><th>Level</th><th>Score</th><th></th></tr>${sc.map(s=>`<tr><td>${dt(s.d)}</td><td>${s.c}</td><td>${s.lv=='h'?'High':'Medium'}</td><td><b>${s.g}/${s.tm}</b> (${Math.round(s.g/s.tm*100)}%)</td><td><button class="chip" onclick="delSc('${s.c}')">✕</button></td></tr>`).join('')}</table>`:'<div class="mu">No scores saved yet.</div>'}
+${tr.length?`<h2>How she’s doing by topic <span class="mu">(weakest first)</span></h2><table class="sc">${tr.map(([k,g,m,p])=>`<tr><td>${k}</td><td style="width:35%"><div class="pb"><i style="width:${Math.round(p*100)}%;background:${col(p)}"></i></div></td><td><b>${Math.round(p*100)}%</b> <span class="mu">(${g}/${m})</span></td></tr>`).join('')}</table>`:''}
+${ps.length||sc.length?`<div class="row"><button class="b g" onclick="clrAll()">${clr?'Tap again to delete everything':'Clear all scores & papers'}</button></div>`:''}`}
 function pr(c){document.body.className=c;try{window.print()}finally{document.body.className=''}}
 let DL=null;try{(window.claude&&claude.use?claude.use('downloads'):Promise.resolve(null)).then(d=>{DL=d}).catch(()=>{})}catch(e){}
 function mkPdf(J){const enc=new TextEncoder(),parts=[],offs=[];let len=0;const add=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);len+=b.length};const obj=(n,f)=>{offs[n]=len;add(`${n} 0 obj\n`);f();add('\nendobj\n')};const n=J.length;add('%PDF-1.4\n');
@@ -394,5 +422,5 @@ const J=pg.map(([s,e])=>{const c=document.createElement('canvas');c.width=794*S;
 const code=cur.s0.toString(36).toUpperCase();await DL.save({filename:`KS3-Maths-${w=='q'?'Questions':'AnswerKey'}-${code}.pdf`,data:mkPdf(J)});m.textContent='Saved ✓'}
 catch(e){m.textContent=e&&e.code=='declined'?'Download cancelled.':'Could not make the PDF here. Use Print and choose Save as PDF instead.'}
 finally{root.remove();bs.forEach(b=>b.disabled=false)}}
-chips();
+chips();renderScores();
 </script></body></html>
